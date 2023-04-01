@@ -1,0 +1,83 @@
+# Nome do serviço definido como dio-live-project
+service: dio-live-project
+
+# Versão do framework utilizado
+frameworkVersion: '2'
+
+# Configurações do provedor (AWS)
+provider:
+  name: aws
+  runtime: nodejs14.x
+  lambdaHashingVersion: '20201221' # Versão do hash para garantir a estabilidade do código
+  region: us-east-1 # Região da AWS onde a solução será implantada
+
+  # Definição da política IAM que permite operações no DynamoDB
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:GetItem
+            - dynamodb:Scan
+          Resource:
+            - arn:aws:dynamodb:us-east-1:167880115321:table/ItemTable
+
+# Definição das funções que serão executadas
+functions:
+  # Função "hello" que retorna uma mensagem simples ao acessar a rota "/"
+  hello:
+    handler: src/hello.handler # Arquivo que contém o código da função
+    events:
+      - http:
+          path: /
+          method: get
+
+  # Função "insertItem" que adiciona um novo item à tabela quando uma solicitação HTTP POST é feita na rota "/item"
+  insertItem:
+    handler: src/insertItem.handler # Arquivo que contém o código da função
+    events:
+      - http:
+          path: /item
+          method: post
+
+  # Função "fetchItems" que recupera todos os itens da tabela quando uma solicitação HTTP GET é feita na rota "/items"
+  fetchItems:
+    handler: src/fetchItems.handler # Arquivo que contém o código da função
+    events:
+      - http:
+          path: /items
+          method: get
+
+  # Função "fetchItem" que recupera um item específico da tabela quando uma solicitação HTTP GET é feita na rota "/items/{id}"
+  fetchItem:
+    handler: src/fetchItem.handler # Arquivo que contém o código da função
+    events:
+      - http:
+          path: /items/{id}
+          method: get
+
+  # Função "updateItem" que atualiza um item específico da tabela quando uma solicitação HTTP PUT é feita na rota "/items/{id}"
+  updateItem:
+    handler: src/updateItem.handler # Arquivo que contém o código da função
+    events:
+      - http:
+          path: /items/{id}
+          method: put
+
+# Definição dos recursos adicionais necessários para a solução
+resources:
+  # Recurso da tabela DynamoDB
+  Resources:
+    ItemTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ItemTable # Nome da tabela
+        BillingMode: PAY_PER_REQUEST # Modo de cobrança
+        AttributeDefinitions:
+          - AttributeName: id # Nome do atributo "id"
+            AttributeType: S # Tipo do atributo (string)
+        KeySchema:
+          - AttributeName: id # Chave primária
+            KeyType: HASH # Tipo de chave primária (HASH)
